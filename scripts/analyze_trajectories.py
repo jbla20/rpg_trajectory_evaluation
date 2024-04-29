@@ -32,7 +32,6 @@ def spec(N):
 
 PALLETE = spec(20)
 
-
 def collect_odometry_error_per_dataset(dataset_multierror_list,
                                        dataset_names):
     dataset_rel_err = []
