@@ -45,6 +45,7 @@ def boxplot_compare(ax, xlabels,
         leg_handles.append(tmp)
         leg_labels.append(data_labels[idx])
         idx += 1
+
     ax.set_xticks(np.arange(n_xlabel))
     ax.set_xticklabels(xlabels)
     xlims = ax.get_xlim()
@@ -59,13 +60,21 @@ def boxplot_compare(ax, xlabels,
 def plot_trajectory_top(ax, pos, color, name, alpha=1.0):
     ax.grid(ls='--', color='0.7')
     # pos_0 = pos - pos[0, :]
+<<<<<<< HEAD
     ax.plot(pos[:, 0], pos[:, 1], color=color, linestyle='-', alpha=alpha, label=name)
+=======
+    ax.plot(pos[:, 0], pos[:, 1], color, linestyle='-', alpha=alpha, label=name)
+>>>>>>> 8c8ceec55c5c5094a6494208cfc5f54afe0bbc4d
 
 
 def plot_trajectory_side(ax, pos, color, name, alpha=1.0):
     ax.grid(ls='--', color='0.7')
     # pos_0 = pos - pos[0, :]
+<<<<<<< HEAD
     ax.plot(pos[:, 0], pos[:, 2], color=color, linestyle='-', alpha=alpha, label=name)
+=======
+    ax.plot(pos[:, 0], pos[:, 2], color, linestyle='-', alpha=alpha, label=name)
+>>>>>>> 8c8ceec55c5c5094a6494208cfc5f54afe0bbc4d
 
 
 def plot_aligned_top(ax, p_gt, p_es, n_align_frames):

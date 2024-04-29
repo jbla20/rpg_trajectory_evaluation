@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import math
 import pickle
 
 import numpy as np
@@ -149,7 +150,7 @@ class Trajectory:
         if os.path.isfile(self.cached_rel_err_fn):
             print('Loading cached relative (odometry) errors from ' +
                   self.cached_rel_err_fn)
-            with open(self.cached_rel_err_fn) as f:
+            with open(self.cached_rel_err_fn, "rb") as f:
                 self.rel_errors = pickle.load(f)
             print("Loaded odometry error calcualted at {0}".format(
                 self.rel_errors.keys()))
@@ -198,6 +199,22 @@ class Trajectory:
         rm_fn = os.path.join(data_dir, Trajectory.saved_res_dir_nm,
                              est_type, base_fn)
         Trajectory._safe_remove_file(rm_fn)
+
+    @staticmethod
+    def truncate(number, decimals=0):
+        """
+        Returns a value truncated to a specific number of decimal places.
+        """
+        if not isinstance(decimals, int):
+            raise TypeError("decimal places must be an integer.")
+        elif decimals < 0:
+            raise ValueError("decimal places has to be 0 or more.")
+        elif decimals == 0:
+            return math.trunc(number)
+
+        factor = 10.0 ** decimals
+        return math.trunc(number * factor) / factor
+
 
     def compute_boxplot_distances(self):
         print("Computing preset subtrajectory lengths for relative errors...")

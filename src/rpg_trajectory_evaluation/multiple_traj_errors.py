@@ -92,6 +92,7 @@ class MulTrajError(object):
         for et in self.kAbsMetrics:
             self.abs_errors[et+'_stats'] = rw.compute_statistics(
                 np.array(self.abs_errors[et]))
+
         self.overall_rel_errors = {}
         for et in kRelMetrics:
             values = []
@@ -136,11 +137,11 @@ class MulTrajError(object):
         if self.abs_errors:
             with open(os.path.join(self.cache_results_dir,
                                    'mt_cached_abs_err_' +
-                                   self.align_str+'.pickle'), 'w') as f:
+                                   self.align_str+'.pickle'), 'wb') as f:
                 pickle.dump(self.abs_errors, f)
         if self.rel_errors:
             with open(os.path.join(self.cache_results_dir,
-                                   'mt_cached_rel_err.pickle'), 'w') as f:
+                                   'mt_cached_rel_err.pickle'), 'wb') as f:
                 pickle.dump(self.rel_errors, f)
 
     def get_relative_errors_and_distances(
