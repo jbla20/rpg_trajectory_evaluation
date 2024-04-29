@@ -26,8 +26,11 @@ rc('text', usetex=True)
 
 FORMAT = '.pdf'
 
-PALLETE = ['blue', 'green', 'red', 'cyan', 'black', 'yellow', 'magenta',
-           'lightblue', 'lightgreen', 'lightcoral', 'darkblue', 'darkred', 'darkgreen']
+def spec(N):                                             
+    t = np.linspace(-510, 510, N)                                              
+    return np.round(np.clip(np.stack([-t, 510-np.abs(t), t], axis=1), 0, 255)).astype("float32")/255
+
+PALLETE = spec(20)
 
 
 def collect_odometry_error_per_dataset(dataset_multierror_list,
@@ -319,7 +322,7 @@ def parse_config_file(config_fn, sort_names):
         d = yaml.load(f)
     datasets = d['Datasets'].keys()
     if sort_names:
-        datasets.sort()
+        datasets = sorted(datasets)
     datasets_labels = {}
     datasets_titles = {}
     for v in datasets:
@@ -329,7 +332,7 @@ def parse_config_file(config_fn, sort_names):
 
     algorithms = d['Algorithms'].keys()
     if sort_names:
-        algorithms.sort()
+        algorithms = sorted(algorithms)
     alg_labels = {}
     alg_fn = {}
     for v in algorithms:
