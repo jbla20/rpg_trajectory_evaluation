@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import argparse
@@ -145,7 +145,7 @@ if __name__ == '__main__':
               "We will plot trials {0}.".format(args.mul_plot_idx))
     else:
         args.mul_plot_idx = [0]
-    assert len(args.mul_plot_idx) is 1, "Multiple plots not supported yet"
+    assert len(args.mul_plot_idx) == 1, "Multiple plots not supported yet"
 
     for est_type_i, plot_dir_i in zip(args.est_types, plots_dirs):
         print(Fore.RED +

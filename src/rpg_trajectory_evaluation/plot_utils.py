@@ -34,15 +34,14 @@ def boxplot_compare(ax, xlabels,
     leg_labels = []
     idx = 0
     for idx, d in enumerate(data):
-        # print("idx and d: {0} and {1}".format(idx, d))
+        d = np.array(d, dtype=object) # Changed
         w = 1 / (1.5 * n_data + 1.5)
         widths = [w for pos in np.arange(n_xlabel)]
         positions = [pos - 0.5 + 1.5 * w + idx * w
                      for pos in np.arange(n_xlabel)]
-        # print("Positions: {0}".format(positions))
         bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
         color_box(bp, data_colors[idx])
-        tmp, = plt.plot([1, 1], data_colors[idx])
+        tmp, = plt.plot([], [], data_colors[idx]) # Changed
         leg_handles.append(tmp)
         leg_labels.append(data_labels[idx])
         idx += 1
@@ -88,4 +87,4 @@ def plot_error_n_dim(ax, distances, errors, results_dir,
     assert len(colors) == errors.shape[1]
     for i in range(len(colors)):
         ax.plot(distances, errors[:, i],
-                color=color[i], linestyle='-', label=labels[i])
+                color=colors[i], linestyle='-', label=labels[i]) # Changed

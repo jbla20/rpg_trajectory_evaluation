@@ -83,9 +83,8 @@ class MulTrajError(object):
         if self.n_traj == 0:
             return
         print("Relative errors numbers:")
-        for d, e in self.rel_errors.iteritems():
-            print("- {0}: {1} {2} samples".format(d, e.keys(),
-                                                  e['rel_trans'].size))
+        for d, e in self.rel_errors.items(): # Changed
+            print("- {0}: {1} {2} samples".format(d, list(e.keys()), e['rel_trans'].size))
 
     def updateStatistics(self):
         if self.n_traj == 0:

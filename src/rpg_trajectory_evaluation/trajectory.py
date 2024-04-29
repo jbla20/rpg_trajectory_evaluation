@@ -160,7 +160,7 @@ class Trajectory:
 
     def cache_current_error(self):
         if self.rel_errors:
-            with open(self.cached_rel_err_fn, 'w') as f:
+            with open(self.cached_rel_err_fn, 'wb') as f: # Changed
                 pickle.dump(self.rel_errors, f)
             print(Fore.YELLOW + "Saved relative error to {0}.".format(
                 self.cached_rel_err_fn))
@@ -202,8 +202,9 @@ class Trajectory:
     def compute_boxplot_distances(self):
         print("Computing preset subtrajectory lengths for relative errors...")
         print("Use percentage {0} of trajectory length.".format(self.boxplot_pcts))
-        self.preset_boxplot_distances = [np.floor(pct*self.traj_length)
+        self.preset_boxplot_distances = [np.around(pct*self.traj_length, decimals=2)
                                          for pct in self.boxplot_pcts]
+        print("Trajectory length is {0}. ".format(self.traj_length))
 
         print("...done. Computed preset subtrajecory lengths:"
               " {0}".format(self.preset_boxplot_distances))
