@@ -34,6 +34,7 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
     """ Boxplot comparison of the relative error for different test IDs.
     :param eval_dir: Folder containing the evaluation results for the different tests.
     :param plot_type: Type of error to plot (valid options: 'rel_trans', 'rel_trans_perc', 'rel_yaw')
+    :param save: If True, the plots are saved in the eval_dir folder. If False, the plots are shown.
     """
     default_boxplot_perc = [0.1, 0.2, 0.3, 0.4, 0.5]
     data = []
@@ -42,9 +43,11 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
         if not Path(subfolder).is_dir():
             continue
         
+        # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
         with suppress_stdout():
             traj = Trajectory(results_dir=subfolder, preset_boxplot_percentages=default_boxplot_perc)
         
+        # Get relative errors and save them in the data list along with the xlabels
         rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
         data.append(rel_errors[plot_type][0])
         xlabels.append(Path(subfolder).name)
@@ -56,9 +59,9 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
     n_xlabel = len(xlabels)
     w = 1/3
     widths = [w for pos in np.arange(n_xlabel)]
-    positions = [pos - 0.5 + 1.5 * w
-                for pos in np.arange(n_xlabel)]
+    positions = [pos - 0.5 + 1.5 * w for pos in np.arange(n_xlabel)]
     for boxplot_idx, d in tqdm(enumerate(data), desc='Creating boxplots', leave=True, total=len(default_boxplot_perc)):
+        # Create figure and axis
         fig = plt.figure(figsize=(10, 5))
         ax = fig.add_subplot(111,
                             xlabel='Test ID', 
