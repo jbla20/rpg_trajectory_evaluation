@@ -50,7 +50,7 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
         # Get relative errors and save them in the data list along with the xlabels
         rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
         data.append(rel_errors[plot_type][0])
-        xlabels.append(Path(subfolder).name)
+        xlabels.append(Path(subfolder).name[:7])
     print("Loaded data: ", xlabels)
     
     # Invert list of lists to have the boxplot percent as the outer list and the test ID as the inner list
