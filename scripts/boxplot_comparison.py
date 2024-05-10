@@ -67,42 +67,38 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
     widths = [w for pos in np.arange(n_xlabel)]
     positions = [pos - 0.5 + 1.5 * w for pos in np.arange(n_xlabel)]
     for boxplot_idx, d in tqdm(enumerate(data), desc='Creating boxplots', leave=True, total=len(default_boxplot_perc)):
-        try:
-            # Create figure and axis
-            fig = plt.figure(figsize=(10, 5))
-            ax = fig.add_subplot(111,
-                                xlabel='Test ID', 
-                                ylabel='Translation error [%]', 
-                                title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
-            # Convert from list to numpy array
-            d = np.array(d, dtype=object)
+        # Create figure and axis
+        fig = plt.figure(figsize=(10, 5))
+        ax = fig.add_subplot(111,
+                            xlabel='Test ID', 
+                            ylabel='Translation error [%]', 
+                            title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
+        # Convert from list to numpy array
+        d = np.array(d, dtype=object)
 
-            # Create boxplot
-            bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
-            color_box(bp, 'b')
-            
-            # Set xticks and xticklabels
-            ax.set_xticks(np.arange(n_xlabel))
-            ax.set_xticklabels(xlabels)
-            xlims = ax.get_xlim()
-            ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
-            
-            # Add legend
-            leg_handle, = plt.plot([], [], 'b')
-            ax.legend([leg_handle], ['Estimate'], loc='upper left')
-            map(lambda x: x.set_visible(False), [leg_handle])
-            
-            # Save or show plot
-            fig.tight_layout()
-            if save:
-                fig.savefig(eval_dir + f'/rel_translation_error_perc_comparison_{str(default_boxplot_perc[boxplot_idx])}.pdf',
-                            bbox_inches="tight")
-            else:
-                plt.show()
-            plt.close(fig)
-        except Exception as e:
-            print("Exception", e)
-            
+        # Create boxplot
+        bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
+        color_box(bp, 'b')
+        
+        # Set xticks and xticklabels
+        ax.set_xticks(np.arange(n_xlabel))
+        ax.set_xticklabels(xlabels)
+        xlims = ax.get_xlim()
+        ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
+        
+        # Add legend
+        leg_handle, = plt.plot([], [], 'b')
+        ax.legend([leg_handle], ['Estimate'], loc='upper left')
+        map(lambda x: x.set_visible(False), [leg_handle])
+        
+        # Save or show plot
+        fig.tight_layout()
+        if save:
+            fig.savefig(eval_dir + f'/rel_translation_error_perc_comparison_{str(default_boxplot_perc[boxplot_idx])}.pdf',
+                        bbox_inches="tight")
+        else:
+            plt.show()
+        plt.close(fig)
         
 
 if __name__ == "__main__":
