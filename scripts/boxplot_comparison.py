@@ -43,14 +43,20 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
         if not Path(subfolder).is_dir():
             continue
         
-        # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
-        with suppress_stdout():
-            traj = Trajectory(results_dir=subfolder, preset_boxplot_percentages=default_boxplot_perc)
-        
-        # Get relative errors and save them in the data list along with the xlabels
-        rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
-        data.append(rel_errors[plot_type][0])
+        # Save the xlabels
         xlabels.append(Path(subfolder).name[:7])
+        
+        # Skip if there is no data in the subfolder
+        if Path(subfolder).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
+            # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
+            with suppress_stdout():
+                traj = Trajectory(results_dir=subfolder, preset_boxplot_percentages=default_boxplot_perc)
+            
+            # Get relative errors and save them in the data list
+            rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
+            data.append(rel_errors[plot_type][0])
+        else:
+            data.append([[] for _ in range(len(default_boxplot_perc))])
     print("Loaded data: ", xlabels)
     
     # Invert list of lists to have the boxplot percent as the outer list and the test ID as the inner list
@@ -61,39 +67,42 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
     widths = [w for pos in np.arange(n_xlabel)]
     positions = [pos - 0.5 + 1.5 * w for pos in np.arange(n_xlabel)]
     for boxplot_idx, d in tqdm(enumerate(data), desc='Creating boxplots', leave=True, total=len(default_boxplot_perc)):
-        # Create figure and axis
-        fig = plt.figure(figsize=(10, 5))
-        ax = fig.add_subplot(111,
-                            xlabel='Test ID', 
-                            ylabel='Translation error [%]', 
-                            title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
-        
-        # Convert from list to numpy array
-        d = np.array(d, dtype=object)
+        try:
+            # Create figure and axis
+            fig = plt.figure(figsize=(10, 5))
+            ax = fig.add_subplot(111,
+                                xlabel='Test ID', 
+                                ylabel='Translation error [%]', 
+                                title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
+            # Convert from list to numpy array
+            d = np.array(d, dtype=object)
 
-        # Create boxplot
-        bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
-        color_box(bp, 'b')
-        
-        # Set xticks and xticklabels
-        ax.set_xticks(np.arange(n_xlabel))
-        ax.set_xticklabels(xlabels)
-        xlims = ax.get_xlim()
-        ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
-        
-        # Add legend
-        leg_handle, = plt.plot([], [], 'b')
-        ax.legend([leg_handle], ['Estimate'], loc='upper left')
-        map(lambda x: x.set_visible(False), [leg_handle])
-        
-        # Save or show plot
-        fig.tight_layout()
-        if save:
-            fig.savefig(eval_dir + f'/rel_translation_error_perc_comparison_{str(default_boxplot_perc[boxplot_idx])}.pdf',
-                        bbox_inches="tight")
-        else:
-            plt.show()
-        plt.close(fig)
+            # Create boxplot
+            bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
+            color_box(bp, 'b')
+            
+            # Set xticks and xticklabels
+            ax.set_xticks(np.arange(n_xlabel))
+            ax.set_xticklabels(xlabels)
+            xlims = ax.get_xlim()
+            ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
+            
+            # Add legend
+            leg_handle, = plt.plot([], [], 'b')
+            ax.legend([leg_handle], ['Estimate'], loc='upper left')
+            map(lambda x: x.set_visible(False), [leg_handle])
+            
+            # Save or show plot
+            fig.tight_layout()
+            if save:
+                fig.savefig(eval_dir + f'/rel_translation_error_perc_comparison_{str(default_boxplot_perc[boxplot_idx])}.pdf',
+                            bbox_inches="tight")
+            else:
+                plt.show()
+            plt.close(fig)
+        except Exception as e:
+            print("Exception", e)
+            
         
 
 if __name__ == "__main__":
