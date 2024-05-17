@@ -74,8 +74,11 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
                             ylabel='Translation error [%]', 
                             title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
         # Convert from list to numpy array
-        d = np.array(d, dtype=object)
-
+        temp = np.empty((n_xlabel,), dtype=object)
+        for i in range(n_xlabel):
+            temp[i] = d[i]
+        d = temp
+        
         # Create boxplot
         bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
         color_box(bp, 'b')
