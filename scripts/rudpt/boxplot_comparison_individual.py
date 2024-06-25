@@ -61,10 +61,8 @@ def num_to_name(traj_num_identifier : str):
     return f"{traj_type}_{turbidity}_{marine_snow}"
 
 def get_individual_combination(traj_num_identifiers : List[str], condition_type : str, level : str,):
-    if condition_type == 't':
-        match_char_idx = 4
-    elif condition_type == 'ms':
-        match_char_idx = 6
+    if condition_type == 't': match_char_idx = 4
+    elif condition_type == 'ms': match_char_idx = 6
     else:
         raise ValueError("Invalid condition type: " + condition_type)
     
