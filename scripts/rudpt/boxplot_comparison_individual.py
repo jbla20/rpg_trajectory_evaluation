@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 
+# Standard library imports
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
 from pathlib import Path
 import argparse
 from tqdm import tqdm
-
 from contextlib import contextmanager
-import add_path
 import sys, os
-from trajectory import Trajectory
-from typing import List
 
+# Type imports
+from typing import List, Dict
+from matplotlib.lines import Line2D
+
+# Local imports
+import add_path
+from trajectory import Trajectory
+
+# Constants
 ALG_COLOR = {'vins': 'b', 'svo': 'g', 'orb_slam3': 'r'}
 TEST_MAP = {'1,1' : '1rect', 
             '1,2' : '1circ', 
             '1,3' : '1rand', 
             '2,1' : '2feat', 
-            '2,2' : '2tilt',}
+            '2,2' : '2tilt'}
 CONDITION_MAP = {'t' : 
                     {'0': '0ml', '1': '50ml', '2': '100ml'}, 
                 'ms' : 
@@ -34,7 +40,7 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-def color_box(bp, color):
+def color_box(bp : Dict[str, List[Line2D]], color : str):
     elements = ['medians', 'boxes', 'caps', 'whiskers']
     # Iterate over each of the elements changing the color
     for elem in elements:
@@ -42,7 +48,7 @@ def color_box(bp, color):
          for idx in range(len(bp[elem]))]
     return
 
-def num_to_name(traj_num_identifier : str):    
+def num_to_name(traj_num_identifier : str) -> str:    
     # Determine trajectory type
     if not traj_num_identifier[:3] in ['1,1', '1,2', '1,3', '2,1', '2,2']:
         raise ValueError("Invalid trajectory type: " + traj_num_identifier[:3])
@@ -60,7 +66,7 @@ def num_to_name(traj_num_identifier : str):
     
     return f"{traj_type}_{turbidity}_{marine_snow}"
 
-def get_individual_combination(traj_num_identifiers : List[str], condition_type : str, level : str,):
+def get_individual_combination(traj_num_identifiers : List[str], condition_type : str, level : str) -> List[int]:
     if condition_type == 't': match_char_idx = 4
     elif condition_type == 'ms': match_char_idx = 6
     else:
@@ -70,8 +76,8 @@ def get_individual_combination(traj_num_identifiers : List[str], condition_type 
     indices = [i for i, identifier in enumerate(traj_num_identifiers) if identifier[match_char_idx] == level]    
     return indices
 
-def get_algs_from_dirs(dirs : List[str], alg_type : str):
-    if alg_type != 'combined':
+def get_algs_from_dirs(dirs : List[str], alg_type : str) -> List[str]:
+    if alg_type != 'mixed':
         return [alg_type]
     
     algs = []
@@ -80,7 +86,7 @@ def get_algs_from_dirs(dirs : List[str], alg_type : str):
         elif dir.count('svo') > 0: algs.append('svo')
         elif dir.count('orb_slam3') > 0: algs.append('orb_slam3')
         else:
-            raise ValueError("Invalid algorithm folder for alg_type='combined': " + dir)
+            raise ValueError("Invalid algorithm folder for alg_type='mixed': " + dir)
     
     return algs
     
@@ -88,39 +94,50 @@ def get_algs_from_dirs(dirs : List[str], alg_type : str):
 def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : str = 'rel_trans_perc', save : bool = False):    
     """ Boxplot comparison of the relative error for different test IDs.
     :param eval_dir: Folder containing the evaluation results for the different tests.
-    :param alg_type: Name of the algorithm to compare (valid options: 'vins', 'svo', 'orb_slam3', 'combined')
+    :param alg_type: Name of the algorithm to compare (valid options: 'vins', 'svo', 'orb_slam3', 'mixed')
     :param plot_type: Type of error to plot (valid options: 'rel_trans', 'rel_trans_perc', 'rel_yaw')
     :param save: If True, the plots are saved in the eval_dir folder. If False, the plots are shown.
     """
-    # Load data
-    test_type = TEST_MAP[Path(eval_dir).name[:3]]
-    alg_folders = [eval_dir] if alg_type != 'combined' else [folder for folder in sorted(glob.glob(eval_dir + '/*'), reverse=True) if Path(folder).is_dir()]
-    alg_types = get_algs_from_dirs(alg_folders, alg_type)
+    # Load and initialise data
+    test_type = TEST_MAP[Path(eval_dir).name[:3]] if Path(eval_dir).name[2] != 'x' else Path(eval_dir).name[0] + 'comb'
+    alg_dirs = [eval_dir] if alg_type != 'mixed' else [dir for dir in sorted(glob.glob(eval_dir + '/*'), reverse=True) if Path(dir).is_dir()]
+    alg_types = get_algs_from_dirs(alg_dirs, alg_type)
+    boxplot_perc = [0.1]#, 0.2, 0.3, 0.4, 0.5]
     n_algs = len(alg_types)
-    data = [[] for _ in range(n_algs)]
+    n_conds = 12
+    n_perc = len(boxplot_perc)
     traj_num_identifiers = []
     
-    boxplot_perc = [0.1]#, 0.2, 0.3, 0.4, 0.5]
-    for i, alg_folder in enumerate(alg_folders):
-        tmp_dir = alg_folder
-        for sub_folder in sorted(glob.glob(tmp_dir + '/*')):
-            if not Path(sub_folder).is_dir():
-                continue
-            
-            # Get trajectory number identifier
-            if i == 0: traj_num_identifiers.append(Path(sub_folder).name[:7])
-            
-            # Skip if there is no data in the sub folder
-            if Path(sub_folder).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
-                # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
-                with suppress_stdout():
-                    traj = Trajectory(results_dir=sub_folder, preset_boxplot_percentages=boxplot_perc)
+    data = [[[np.empty(0) for _ in range(n_perc)] for _ in range(n_conds)] for _ in range(n_algs)]
+    for i, alg_dir in enumerate(alg_dirs):        
+        test_dirs = [alg_dir] if test_type.count('comb') == 0 else [dir for dir in sorted(glob.glob(alg_dir + '/*'), reverse=True) if Path(dir).is_dir()]
+        
+        remove_idx = set()
+        for test_dir in test_dirs:
+            for j, sub_dir in enumerate(sorted(glob.glob(test_dir + '/*'))):
+                if not Path(sub_dir).is_dir():
+                    continue
                 
-                # Get relative errors and save them in the data list
-                rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
-                data[i].append(rel_errors[plot_type][0])
-            else:
-                data[i].append([[] for _ in range(len(boxplot_perc))])
+                # Get trajectory number identifier
+                if len(traj_num_identifiers) < n_conds: traj_num_identifiers.append(Path(sub_dir).name[:7])
+                
+                # Skip if there is no data in the sub folder
+                if Path(sub_dir).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
+                    # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
+                    with suppress_stdout():
+                        traj = Trajectory(results_dir=sub_dir, preset_boxplot_percentages=boxplot_perc)
+                    
+                    # Get relative errors and save them in the data list
+                    rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
+                    data[i][j] = [np.concatenate((a, b)) for a, b in zip(data[i][j], rel_errors[plot_type][0])]
+                else:
+                    # Add index to remove list since no data was found
+                    remove_idx.add(j)
+                    
+        # Remove data where no results were found for at least one of the movement patterns
+        for idx in sorted(remove_idx, reverse=True):
+            data[i][idx] = [np.empty(0) for _ in range(n_perc)]
+        
     print("Loaded data: ", traj_num_identifiers)
     
     
@@ -140,7 +157,7 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
         widths = [w for _ in np.arange(n_xlabel)]
         step_dist = 0.1 + w
         outer_offset = step_dist * (n_algs - 1) / 2
-        for boxplot_idx, alg_cond_data in tqdm(enumerate(perc_alg_cond_data), desc='Creating boxplots', leave=True, total=len(boxplot_perc)):
+        for boxplot_idx, alg_cond_data in tqdm(enumerate(perc_alg_cond_data), desc='Creating boxplots', leave=True, total=n_perc):
             # Create figure and axis
             fig = plt.figure(figsize=(10, 5))
             title = f'{alg_type}_{test_type}_{condition[0]}={CONDITION_MAP[condition[0]][condition[1]]}' \
@@ -196,8 +213,8 @@ if __name__ == "__main__":
         'eval_dir', type=str,
         help="Folder containing the test runs with existing results.")
     parser.add_argument(
-        '--alg_type', required=False, type=str, choices=['vins', 'svo', 'orb_slam3', 'combined'],
-        help="Name of the algorithm(s) to compare. If using 'combined', ensure that the names of the algorithms are in the respective folder names.",
+        '--alg_type', required=False, type=str, choices=['vins', 'svo', 'orb_slam3', 'mixed'],
+        help="Name of the algorithm(s) to compare. If using 'mixed', ensure that the names of the algorithms are in the respective folder names.",
         default='vins')
     parser.add_argument(
         '--plot_type', required=False, type=str, choices=['rel_trans', 'rel_trans_perc', 'rel_yaw'],
