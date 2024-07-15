@@ -119,7 +119,7 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
                     continue
                 
                 # Get trajectory number identifier
-                if len(traj_num_identifiers) < n_conds: traj_num_identifiers.append(Path(sub_dir).name[:7])
+                traj_num_identifiers.append(Path(sub_dir).name[:7])
                 
                 # Skip if there is no data in the sub folder
                 if Path(sub_dir).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
@@ -144,7 +144,7 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
     conditions = [('t', '0'), ('t', '1'), ('t', '2'), ('ms', '0'), ('ms', '1'), ('ms', '2'), ('ms', '3')]
     for condition in conditions:
         # Get the combination of indices for the different levels of the condition
-        indices = get_individual_combination(traj_num_identifiers, condition[0], condition[1])
+        indices = get_individual_combination(traj_num_identifiers[:n_conds], condition[0], condition[1])
         perc_alg_cond_data = [[alg_data[i] for i in indices] for alg_data in data]
         xlabels = [CONDITION_MAP['ms' if condition[0]=='t' else 't'][str(i)] for i in range(len(indices))]
         
