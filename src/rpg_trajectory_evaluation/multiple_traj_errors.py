@@ -79,7 +79,7 @@ class MulTrajError(object):
     def summary(self):
         print("===> MulTrajError: summarized {0} trajectories.".format(
             self.n_traj))
-        print("- Successs indices: {0}".format(self.success_indices))
+        print("- Success indices: {0}".format(self.success_indices))
         if self.n_traj == 0:
             return
         print("Relative errors numbers:")
