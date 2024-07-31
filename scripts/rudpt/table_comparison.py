@@ -40,7 +40,8 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
     :param save: If True, the plots are saved in the eval_dir folder. If False, the plots are shown.
     """
     # Load and initialise data
-    num_tables = 1 if error_type == 'abs' else 5 if error_type == 'rel' else 0
+    tables_rel_perc = [10, 20, 30, 40, 50]
+    num_tables = 1 if error_type == 'abs' else len(tables_rel_perc) if error_type == 'rel' else 0
     vals = np.full((num_tables, 3, 4), np.nan)
     # traj_lengths = np.full((3, 4), np.nan)
     for sub_dir in sorted(glob.glob(eval_dir + '/*')):
@@ -55,18 +56,23 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         #     traj_lengths[identifier] = traj.traj_length
         
         # Save the values for the table
+        idx = 0
         for i, file in enumerate(sorted(glob.glob(sub_dir + "/saved_results/traj_est/" + error_type + "*.yaml"))):
+            if error_type == 'rel' and (i+1)*10 not in tables_rel_perc:
+                continue
+
             with open(file, 'r') as stream:
                 data = yaml.safe_load(stream)
 
-            vals[(i,) + identifier] = np.around(data[metric_type]['rmse'], 2)
+            vals[(idx,) + identifier] = np.around(data[metric_type]['rmse'], 2)
+            idx += 1
 
     # Convert to percent of the full trajectory length
     # vals = vals / traj_lengths[None, :, :] * 100
 
-    for i in tqdm(range(num_tables), desc='Creating tables', leave=True, total=num_tables):
+    for idx in tqdm(range(num_tables), desc='Creating tables', leave=True, total=num_tables):
         # Create the table
-        title = f'rmse_{error_type}_{metric_type}_table' + ('' if error_type == 'abs' else f' [{(i+1)*10}%]')
+        title = f'rmse_{error_type}_{metric_type}_table' + ('' if error_type == 'abs' else f' [{tables_rel_perc[idx]}%]')
         plt.rc('axes', titlesize=14)
         fig, (ax_table, ax_colorbar) = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={'width_ratios': [30, 1]})
         ax_table.axis('off')
@@ -83,14 +89,14 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         norm = mcolors.BoundaryNorm(bounds, cmap.N)
         
         # Use a custom function to replace NaNs with the last index in the colormap
-        colormap_vals = np.where(np.isnan(vals[i,:,:]), len(colors), vals[i,:,:])  # Replace NaNs with the index of black
+        colormap_vals = np.where(np.isnan(vals[idx,:,:]), len(colors), vals[idx,:,:])  # Replace NaNs with the index of black
         colors = cmap(norm(colormap_vals))
 
         # Plot the table
-        table = ax_table.table(cellText=vals[i,:,:],
+        table = ax_table.table(cellText=vals[idx,:,:],
                 rowLabels=['T=' + CONDITION_MAP['t'][str(s)] for s in range(3)],
                 colLabels=['MS=' + CONDITION_MAP['ms'][str(s)] for s in range(4)],
-                colWidths=[0.2]*vals[i,:,:].shape[1],
+                colWidths=[0.2]*vals[idx,:,:].shape[1],
                 loc='center',
                 cellColours=colors)
         
