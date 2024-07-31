@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 
+# Standard library imports
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
 from pathlib import Path
 import argparse
 from tqdm import tqdm
-
 from contextlib import contextmanager
-import add_path
 import sys, os
+
+# Type imports
+from typing import List, Dict
+from matplotlib.lines import Line2D
+
+# Local imports
+import add_path
 from trajectory import Trajectory
 
 @contextmanager
@@ -22,7 +28,7 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-def color_box(bp, color):
+def color_box(bp : Dict[str, List[Line2D]], color : str):
     elements = ['medians', 'boxes', 'caps', 'whiskers']
     # Iterate over each of the elements changing the color
     for elem in elements:
@@ -30,12 +36,13 @@ def color_box(bp, color):
          for idx in range(len(bp[elem]))]
     return
 
-def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):    
+def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save : bool = False):    
     """ Boxplot comparison of the relative error for different test IDs.
     :param eval_dir: Folder containing the evaluation results for the different tests.
     :param plot_type: Type of error to plot (valid options: 'rel_trans', 'rel_trans_perc', 'rel_yaw')
     :param save: If True, the plots are saved in the eval_dir folder. If False, the plots are shown.
     """
+    # Load and initialise data
     default_boxplot_perc = [0.1, 0.2, 0.3, 0.4, 0.5]
     data = []
     xlabels = []
@@ -73,6 +80,7 @@ def boxplot_comparison(eval_dir, plot_type = 'rel_trans_perc', save = False):
                             xlabel='Test ID', 
                             ylabel='Translation error [%]', 
                             title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
+        
         # Convert from list to numpy array
         temp = np.empty((n_xlabel,), dtype=object)
         for i in range(n_xlabel):
