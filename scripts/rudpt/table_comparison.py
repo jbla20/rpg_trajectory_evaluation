@@ -9,12 +9,21 @@ from pathlib import Path
 import argparse
 from tqdm import tqdm
 import yaml
-from contextlib import contextmanager
-import sys, os
 
 # Local imports
 import add_path
 from trajectory import Trajectory
+from helpers import suppress_stdout, latexify, boldify
+
+plt.rc('font', family='sans')
+plt.rc('text', usetex=True)
+plt.rcParams['text.latex.preamble'] = [
+       r'\usepackage{siunitx}',   # i need upright \micro symbols, but you need...
+       r'\sisetup{detect-all}',   # ...this to force siunitx to actually use your fonts
+       r'\usepackage{helvet}',    # set the normal font here
+       r'\usepackage{sansmath}',  # load up the sansmath so that math -> helvet
+       r'\sansmath'               # <- tricky! -- gotta actually tell tex to use!
+]
 
 COLOR_MAP = 'magma_r'
 CONDITION_MAP = {'t' : 
@@ -22,15 +31,6 @@ CONDITION_MAP = {'t' :
                 'ms' : 
                     {'0': '0.0g', '1': '1.5g', '2': '3.0g', '3': '4.5g'}}
 
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
 
 def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str = 'trans', save : bool = False):
     """ Table comparison of the root mean squared error (RMSE) for the different conditions.
@@ -48,7 +48,7 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         if not Path(sub_dir).is_dir():
             continue
         
-        # Save the identifier of the test run        
+        # Save the identifier of the test run
         identifier = (int(Path(sub_dir).name[4]), int(Path(sub_dir).name[6]))
         # if Path(sub_dir).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
         #     with suppress_stdout():
@@ -72,12 +72,12 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
 
     for idx in tqdm(range(num_tables), desc='Creating tables', leave=True, total=num_tables):
         # Create the table
+        plt.rc('axes', titlesize=24, titlepad=15)
+        fig, (ax_table, ax_colorbar) = plt.subplots(1, 2, figsize=(14, 5), gridspec_kw={'width_ratios': [40, 1]}, frameon=False)
         title = f'rmse_{error_type}_{metric_type}_table' + ('' if error_type == 'abs' else f' [{tables_rel_perc[idx]}%]')
-        plt.rc('axes', titlesize=14)
-        fig, (ax_table, ax_colorbar) = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={'width_ratios': [30, 1]})
         ax_table.axis('off')
         ax_table.axis('tight')
-        ax_table.set_title(title)
+        ax_table.set_title(latexify(title))
         
         # Define a colormap with a specific color for NaNs
         cmap = plt.get_cmap(COLOR_MAP)  # Base colormap
@@ -94,9 +94,9 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
 
         # Plot the table
         table = ax_table.table(cellText=vals[idx,:,:],
-                rowLabels=['T=' + CONDITION_MAP['t'][str(s)] for s in range(3)],
-                colLabels=['MS=' + CONDITION_MAP['ms'][str(s)] for s in range(4)],
-                colWidths=[0.2]*vals[idx,:,:].shape[1],
+                rowLabels=boldify(['T=' + CONDITION_MAP['t'][str(s)] for s in range(3)]),
+                colLabels=boldify(['MS=' + CONDITION_MAP['ms'][str(s)] for s in range(4)]),
+                colWidths=[0.16]*vals[idx,:,:].shape[1],
                 loc='center',
                 cellColours=colors)
         
@@ -104,23 +104,27 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         for (i, j), cell in table.get_celld().items():
             if i == 0 or j == -1:
                 cell.set_text_props(weight='bold')
-            cell.set_height(0.1)  # Adjust this value as needed to increase row height
-            cell.set_text_props(fontsize=12)
+            if i == 0: cell.set_height(0.10)  # Adjust this value as needed to increase row height
+            else: cell.set_height(0.3)  # Adjust this value as needed to increase row height
+            cell.set_text_props(fontsize=20)
             cell._loc = 'center'
+        # table.scale(2, 2)  # Adjust this value as needed to increase row height
         
         # Plot colorbar
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         cbar = fig.colorbar(sm, cax=ax_colorbar, orientation='vertical')
-        cbar.set_label('Value [' + ('m' if metric_type == 'trans' else u'\N{DEGREE SIGN}' if metric_type == 'rot' else '') + ']', 
-                       rotation=270, labelpad=15, fontsize=14)
+        cbar.set_label(boldify('Value [' + ('m' if metric_type == 'trans' else 'deg' if metric_type == 'rot' else '') + ']'), 
+                       rotation=270, labelpad=10, fontsize=20)
         cbar.set_ticks([0, max_bound])
-        cbar.ax.tick_params(labelsize=12)
+        cbar.ax.tick_params(labelsize=20)
 
         # Save or show plot
         plt.tight_layout()
+        plt.subplots_adjust(wspace=-0.25)
         if save:
-            plt.savefig(eval_dir + f'/{title}.pdf', 
-                        bbox_inches='tight')
+            plt.savefig(eval_dir + f'/{title}.pdf',
+                        bbox_inches='tight',
+                        transparent=True)
         else:
             plt.show()
         plt.close(fig)

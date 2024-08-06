@@ -7,8 +7,6 @@ import glob
 from pathlib import Path
 import argparse
 from tqdm import tqdm
-from contextlib import contextmanager
-import sys, os
 
 # Type imports
 from typing import List, Dict
@@ -17,16 +15,17 @@ from matplotlib.lines import Line2D
 # Local imports
 import add_path
 from trajectory import Trajectory
+from helpers import suppress_stdout, latexify, boldify
 
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
+plt.rc('font', family='sans')
+plt.rc('text', usetex=True)
+plt.rcParams['text.latex.preamble'] = [
+       r'\usepackage{siunitx}',   # i need upright \micro symbols, but you need...
+       r'\sisetup{detect-all}',   # ...this to force siunitx to actually use your fonts
+       r'\usepackage{helvet}',    # set the normal font here
+       r'\usepackage{sansmath}',  # load up the sansmath so that math -> helvet
+       r'\sansmath'               # <- tricky! -- gotta actually tell tex to use!
+]
 
 def color_box(bp : Dict[str, List[Line2D]], color : str):
     elements = ['medians', 'boxes', 'caps', 'whiskers']
@@ -77,9 +76,9 @@ def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save 
         # Create figure and axis
         fig = plt.figure(figsize=(10, 5))
         ax = fig.add_subplot(111,
-                            xlabel='Test ID', 
-                            ylabel='Translation error [%]', 
-                            title=f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]')
+                            xlabel=boldify('Test ID'), 
+                            ylabel=boldify('Translation error [%]'), 
+                            title=latexify(f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]'))
         
         # Convert from list to numpy array
         temp = np.empty((n_xlabel,), dtype=object)
@@ -93,7 +92,7 @@ def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save 
         
         # Set xticks and xticklabels
         ax.set_xticks(np.arange(n_xlabel))
-        ax.set_xticklabels(xlabels)
+        ax.set_xticklabels(latexify(xlabels))
         xlims = ax.get_xlim()
         ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
         
@@ -129,4 +128,6 @@ if __name__ == "__main__":
     
     
     # Call boxplot comparison function
-    boxplot_comparison(eval_dir=args.eval_dir, plot_type=args.plot_type, save=args.save)
+    boxplot_comparison(eval_dir=args.eval_dir, 
+                       plot_type=args.plot_type, 
+                       save=args.save)

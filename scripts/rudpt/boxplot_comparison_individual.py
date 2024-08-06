@@ -7,8 +7,6 @@ import glob
 from pathlib import Path
 import argparse
 from tqdm import tqdm
-from contextlib import contextmanager
-import sys, os
 
 # Type imports
 from typing import List, Dict
@@ -17,6 +15,17 @@ from matplotlib.lines import Line2D
 # Local imports
 import add_path
 from trajectory import Trajectory
+from helpers import suppress_stdout, latexify, boldify
+
+plt.rc('font', family='sans')
+plt.rc('text', usetex=True)
+plt.rcParams['text.latex.preamble'] = [
+       r'\usepackage{siunitx}',   # i need upright \micro symbols, but you need...
+       r'\sisetup{detect-all}',   # ...this to force siunitx to actually use your fonts
+       r'\usepackage{helvet}',    # set the normal font here
+       r'\usepackage{sansmath}',  # load up the sansmath so that math -> helvet
+       r'\sansmath'               # <- tricky! -- gotta actually tell tex to use!
+]
 
 # Constants
 ALG_COLOR = {'vins': 'b', 'svo': 'g', 'orb_slam3': 'r'}
@@ -29,16 +38,6 @@ CONDITION_MAP = {'t' :
                     {'0': '0ml', '1': '50ml', '2': '100ml'}, 
                 'ms' : 
                     {'0': '0.0g', '1': '1.5g', '2': '3.0g', '3': '4.5g'}}
-
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
 
 def color_box(bp : Dict[str, List[Line2D]], color : str):
     elements = ['medians', 'boxes', 'caps', 'whiskers']
@@ -149,7 +148,7 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
         xlabels = [CONDITION_MAP['ms' if condition[0]=='t' else 't'][str(i)] for i in range(len(indices))]
         
         # Shift the dimension twice to the left to get the correct order of the data (boxplot_perc, alg_type, test_id)
-        for i in range(2): 
+        for i in range(2):
             perc_alg_cond_data = [[list(row) for row in zip(*col)] for col in zip(*perc_alg_cond_data)]
         
         n_xlabel = len(indices)
@@ -159,13 +158,14 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
         outer_offset = step_dist * (n_algs - 1) / 2
         for boxplot_idx, alg_cond_data in tqdm(enumerate(perc_alg_cond_data), desc='Creating boxplots', leave=True, total=n_perc):
             # Create figure and axis
+            plt.rc('axes', titlesize=24, titlepad=15, labelsize=14)
             fig = plt.figure(figsize=(10, 5))
             title = f'{alg_type}_{test_type}_{condition[0]}={CONDITION_MAP[condition[0]][condition[1]]}' \
                     f' [{str(boxplot_perc[boxplot_idx]*100)}%]'
             ax = fig.add_subplot(111,
-                                xlabel='Marine Snow' if condition[0] == 't' else 'Turbidity', 
-                                ylabel='Translation error [%]', 
-                                title=title)
+                                xlabel=boldify('Marine Snow' if condition[0] == 't' else 'Turbidity'), 
+                                ylabel=boldify('Translation error [%]'), 
+                                title=latexify(title))
             
             leg_handles = []
             for alg_idx, cond_data in enumerate(alg_cond_data):
@@ -191,7 +191,7 @@ def boxplot_comparison_individual(eval_dir : str, alg_type : str, plot_type : st
             
             # Set xticks and xticklabels
             ax.set_xticks(np.arange(n_xlabel))
-            ax.set_xticklabels(xlabels)
+            ax.set_xticklabels(latexify(xlabels))
             xlims = ax.get_xlim()
             ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
             ax.set_ylim([0, 100])
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--alg_type', required=False, type=str, choices=['vins', 'svo', 'orb_slam3', 'mixed'],
         help="Name of the algorithm(s) to compare. If using 'mixed', ensure that the names of the algorithms are in the respective folder names.",
-        default='vins')
+        default='svo')
     parser.add_argument(
         '--plot_type', required=False, type=str, choices=['rel_trans', 'rel_trans_perc', 'rel_yaw'],
         help="Type of error to plot",
