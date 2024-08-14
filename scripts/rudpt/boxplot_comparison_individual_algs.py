@@ -215,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--alg_type', required=False, type=str, choices=['vins', 'svo', 'orb_slam3', 'mixed'],
         help="Name of the algorithm(s) to compare. If using 'mixed', ensure that the names of the algorithms are in the respective folder names.",
-        default='svo')
+        default='vins')
     parser.add_argument(
         '--plot_type', required=False, type=str, choices=['rel_trans', 'rel_trans_perc', 'rel_yaw'],
         help="Type of error to plot",
