@@ -2,9 +2,10 @@
 import re
 from contextlib import contextmanager
 import sys, os
+import time
 
 # Type imports
-from typing import List, Dict, Union
+from typing import List, Union
 
 @contextmanager
 def suppress_stdout():
@@ -15,6 +16,18 @@ def suppress_stdout():
             yield
         finally:
             sys.stdout = old_stdout
+
+class Timer(object):
+    def __init__(self, name=None):
+        self.name = name
+
+    def __enter__(self):
+        self.tstart = time.time()
+
+    def __exit__(self, type, value, traceback):
+        if self.name:
+            print('[%s]' % self.name,)
+        print('Elapsed: %s' % (time.time() - self.tstart))
 
 def latexify(text : Union[str, List[str]]) -> Union[str, List[str]]:    
     # Dictionary of LaTeX special characters and their escaped versions
