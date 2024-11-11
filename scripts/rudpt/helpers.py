@@ -29,7 +29,7 @@ class Timer(object):
             print('[%s]' % self.name,)
         print('Elapsed: %s' % (time.time() - self.tstart))
 
-def latexify(text : Union[str, List[str]]) -> Union[str, List[str]]:    
+def latexify(text : Union[str, List[str]]) -> Union[str, List[str]]:
     # Dictionary of LaTeX special characters and their escaped versions
     special_characters = {
         '_': r'\_',
@@ -43,14 +43,14 @@ def latexify(text : Union[str, List[str]]) -> Union[str, List[str]]:
         '~': r'\textasciitilde',
         # u'\N{DEGREE SIGN}': r'^{\circ}'
     }
-    
+
     # Define a function to escape a string
     def escape_string(s: str) -> str:
         # Only escape characters that are not already escaped
         for char, escaped_char in special_characters.items():
             s = re.sub(f'(?<!\\\\){re.escape(char)}', escaped_char, s)
         return s
-    
+
     # Escape each special character in the string
     if isinstance(text, str):
         return escape_string(text)
@@ -73,7 +73,7 @@ def unlatexify(text : Union[str, List[str]]) -> Union[str, List[str]]:
         r'\textasciitilde': '~',
         # r'^{\circ}': u'\N{DEGREE SIGN}'
     }
-    
+
     # Remove potential bold formatting
     text = re.sub(r'\\textbf{(.+?)}', r'\1', text)
 
@@ -100,7 +100,7 @@ def boldify(text : Union[str, List[str]]) -> Union[str, List[str]]:
             return s
         else:
             return r'\textbf{' + s + '}'
-    
+
     if isinstance(text, str):
         return apply_bold(text)
     elif isinstance(text, list):

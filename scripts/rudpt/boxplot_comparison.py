@@ -35,7 +35,7 @@ def color_box(bp : Dict[str, List[Line2D]], color : str):
          for idx in range(len(bp[elem]))]
     return
 
-def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save : bool = False):    
+def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save : bool = False):
     """ Boxplot comparison of the relative error for different test IDs.
     :param eval_dir: Folder containing the evaluation results for the different tests.
     :param plot_type: Type of error to plot (valid options: 'rel_trans', 'rel_trans_perc', 'rel_yaw')
@@ -48,26 +48,26 @@ def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save 
     for subfolder in sorted(glob.glob(eval_dir + '/*')):
         if not Path(subfolder).is_dir():
             continue
-        
+
         # Save the xlabels
         xlabels.append(Path(subfolder).name[:7])
-        
+
         # Skip if there is no data in the subfolder
         if Path(subfolder).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
             # Load trajectory data (suppress stdout to avoid printing trajectory data to console)
             with suppress_stdout():
                 traj = Trajectory(results_dir=subfolder, preset_boxplot_percentages=default_boxplot_perc)
-            
+
             # Get relative errors and save them in the data list
             rel_errors, distances = traj.get_relative_errors_and_distances(error_types=[plot_type])
             data.append(rel_errors[plot_type][0])
         else:
             data.append([[] for _ in range(len(default_boxplot_perc))])
     print("Loaded data: ", xlabels)
-    
+
     # Invert list of lists to have the boxplot percent as the outer list and the test ID as the inner list
     data = [list(i) for i in zip(*data)]
-    
+
     n_xlabel = len(xlabels)
     w = 1/3
     widths = [w for pos in np.arange(n_xlabel)]
@@ -76,31 +76,31 @@ def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save 
         # Create figure and axis
         fig = plt.figure(figsize=(10, 5))
         ax = fig.add_subplot(111,
-                            xlabel=boldify('Test ID'), 
-                            ylabel=boldify('Translation error [%]'), 
+                            xlabel=boldify('Test ID'),
+                            ylabel=boldify('Translation error [%]'),
                             title=latexify(f'Relative translation error comparison [{str(default_boxplot_perc[boxplot_idx]*100)}%]'))
-        
+
         # Convert from list to numpy array
         temp = np.empty((n_xlabel,), dtype=object)
         for i in range(n_xlabel):
             temp[i] = d[i]
         d = temp
-        
+
         # Create boxplot
         bp = ax.boxplot(d, 0, '', positions=positions, widths=widths)
         color_box(bp, 'b')
-        
+
         # Set xticks and xticklabels
         ax.set_xticks(np.arange(n_xlabel))
         ax.set_xticklabels(latexify(xlabels))
         xlims = ax.get_xlim()
         ax.set_xlim([xlims[0]-0.1, xlims[1]-0.1])
-        
+
         # Add legend
         leg_handle, = plt.plot([], [], 'b')
         ax.legend([leg_handle], ['Estimate'], loc='upper left')
         map(lambda x: x.set_visible(False), [leg_handle])
-        
+
         # Save or show plot
         fig.tight_layout()
         if save:
@@ -109,7 +109,7 @@ def boxplot_comparison(eval_dir : str, plot_type : str = 'rel_trans_perc', save 
         else:
             plt.show()
         plt.close(fig)
-        
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -125,9 +125,9 @@ if __name__ == "__main__":
                         action='store_true')
     parser.set_defaults(save=True)
     args = parser.parse_args()
-    
-    
+
+
     # Call boxplot comparison function
-    boxplot_comparison(eval_dir=args.eval_dir, 
-                       plot_type=args.plot_type, 
+    boxplot_comparison(eval_dir=args.eval_dir,
+                       plot_type=args.plot_type,
                        save=args.save)

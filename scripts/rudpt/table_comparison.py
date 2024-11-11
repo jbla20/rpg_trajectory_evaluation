@@ -26,9 +26,9 @@ plt.rcParams['text.latex.preamble'] = [
 ]
 
 COLOR_MAP = 'magma_r'
-CONDITION_MAP = {'t' : 
-                    {'0': '0ml', '1': '50ml', '2': '100ml'}, 
-                'ms' : 
+CONDITION_MAP = {'t' :
+                    {'0': '0ml', '1': '50ml', '2': '100ml'},
+                'ms' :
                     {'0': '0.0g', '1': '1.5g', '2': '3.0g', '3': '4.5g'}}
 
 
@@ -47,14 +47,14 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
     for sub_dir in sorted(glob.glob(eval_dir + '/*')):
         if not Path(sub_dir).is_dir():
             continue
-        
+
         # Save the identifier of the test run
         identifier = (int(Path(sub_dir).name[4]), int(Path(sub_dir).name[6]))
         # if Path(sub_dir).joinpath("saved_results/traj_est/cached/cached_rel_err.pickle").is_file():
         #     with suppress_stdout():
         #         traj = Trajectory(results_dir=sub_dir)
         #     traj_lengths[identifier] = traj.traj_length
-        
+
         # Save the values for the table
         idx = 0
         for i, file in enumerate(sorted(glob.glob(sub_dir + "/saved_results/traj_est/" + error_type + "*.yaml"))):
@@ -78,7 +78,7 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         ax_table.axis('off')
         ax_table.axis('tight')
         ax_table.set_title(latexify(title))
-        
+
         # Define a colormap with a specific color for NaNs
         cmap = plt.get_cmap(COLOR_MAP)  # Base colormap
         colors = cmap(np.arange(cmap.N))  # Get colors from the base colormap
@@ -87,7 +87,7 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
         max_bound = 1 if metric_type == 'trans' else 100 if metric_type == 'rot' else 0
         bounds = np.linspace(0, max_bound, len(colors))  # Define bounds for each color
         norm = mcolors.BoundaryNorm(bounds, cmap.N)
-        
+
         # Use a custom function to replace NaNs with the last index in the colormap
         colormap_vals = np.where(np.isnan(vals[idx,:,:]), len(colors), vals[idx,:,:])  # Replace NaNs with the index of black
         colors = cmap(norm(colormap_vals))
@@ -99,7 +99,7 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
                 colWidths=[0.16]*vals[idx,:,:].shape[1],
                 loc='center',
                 cellColours=colors)
-        
+
         # Adjust the height of the rows
         for (i, j), cell in table.get_celld().items():
             if i == 0 or j == -1:
@@ -109,11 +109,11 @@ def table_comparison(eval_dir : str, error_type : str = 'abs', metric_type : str
             cell.set_text_props(fontsize=20)
             cell._loc = 'center'
         # table.scale(2, 2)  # Adjust this value as needed to increase row height
-        
+
         # Plot colorbar
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         cbar = fig.colorbar(sm, cax=ax_colorbar, orientation='vertical')
-        cbar.set_label(boldify('Value [' + ('m' if metric_type == 'trans' else 'deg' if metric_type == 'rot' else '') + ']'), 
+        cbar.set_label(boldify('Value [' + ('m' if metric_type == 'trans' else 'deg' if metric_type == 'rot' else '') + ']'),
                        rotation=270, labelpad=10, fontsize=20)
         cbar.set_ticks([0, max_bound])
         cbar.ax.tick_params(labelsize=20)
@@ -147,10 +147,10 @@ if __name__ == "__main__":
                         action='store_true')
     parser.set_defaults(save=True)
     args = parser.parse_args()
-    
-    
+
+
     # Call table comparison function
-    table_comparison(eval_dir=args.eval_dir, 
+    table_comparison(eval_dir=args.eval_dir,
                     error_type=args.error_type,
                     metric_type=args.metric_type,
                     save=args.save)
